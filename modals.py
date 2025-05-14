@@ -14,4 +14,6 @@ class NameModal(discord.ui.Modal, title="Enter Your Full Name"):
             await interaction.response.send_message("Missing permission to change your nickname.", ephemeral=True)
             return
 
-        await self.on_success(interaction)
+        await interaction.response.defer(ephemeral=True)
+        await self.on_success(interaction, self.full_name.value)
+

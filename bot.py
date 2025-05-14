@@ -45,15 +45,15 @@ async def verify(interaction: discord.Interaction):
 async def verify_user(interaction: discord.Interaction):
     print(f"Verification command invoked by {interaction.user} in {interaction.channel}.")
 
-    # Ask for name first with modal (DO NOT DEFER here!)
-    name_interaction = await ask_name(interaction)
-    if not name_interaction:
-        return
+    
+    # Remove all roles first
+    await remove_all_roles(interaction)
 
-    # Now it's safe to defer for long operations
-    await name_interaction.response.defer(ephemeral=True)
+   # Ask for full name
+    name_interaction, name = await ask_name(interaction)
+    print(f"{interaction.user} set their name to {name}.")
+    
 
-    print(f"Name set to {name_interaction.user.display_name}.")
 
     # Proceed with the rest
     await ask_location(name_interaction)
@@ -67,12 +67,20 @@ async def verify_user(interaction: discord.Interaction):
 
 async def ask_name(interaction: discord.Interaction):
     future = asyncio.get_event_loop().create_future()
-
-    async def on_success(modal_interaction: discord.Interaction):
-        future.set_result(modal_interaction)
+    
+    async def on_success(modal_interaction: discord.Interaction, name: str):
+        future.set_result((modal_interaction, name))
 
     await interaction.response.send_modal(NameModal(on_success))
     return await future
+
+
+async def remove_all_roles(interaction: discord.Interaction):
+    for role in interaction.user.roles:
+        if role.name != "@everyone":  # Skip the default @everyone role
+            await interaction.user.remove_roles(role)
+    
+
 
 
 
