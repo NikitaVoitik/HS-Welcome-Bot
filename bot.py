@@ -45,25 +45,40 @@ async def verify(interaction: discord.Interaction):
 async def verify_user(interaction: discord.Interaction):
     print(f"Verification command invoked by {interaction.user} in {interaction.channel}.")
 
-    
-    # Remove all roles first
+    # Remove all roles
     await remove_all_roles(interaction)
 
-   # Ask for full name
-    name_interaction, name = await ask_name(interaction)
-    print(f"{interaction.user} set their name to {name}.")
-    
+    # Ask for name and description
+    _, name = await ask_name(interaction)
+    print(f"{interaction.user} set their name to {name}")
+
+    _, description = await ask_description(interaction)
+    print(f"{interaction.user} set their description to: {description}")
 
 
-    # Proceed with the rest
-    await ask_location(name_interaction)
-    await ask_occupations(name_interaction)
-    await ask_majors(name_interaction)
-    await ask_levels(name_interaction)
+    await send_description(interaction, description, channel_name="💬global")
 
-    await assign_pending_verification_role(name_interaction)
-    await name_interaction.followup.send("✅ All steps are complete! You will be verified once an admin reviews and approves your information.", ephemeral=True)
+    # Continue using follow-ups or component interactions
+    await ask_location(interaction)
+    await ask_occupations(interaction)
+    await ask_majors(interaction)
+    await ask_levels(interaction)
 
+    await assign_pending_verification_role(interaction)
+    await interaction.followup.send(
+        "✅ All steps are complete! You will be verified once an admin reviews and approves your information.",
+        ephemeral=True
+    )
+
+async def send_description(interaction: discord.Interaction, description: str, channel_name: str = "test"):
+    channel = discord.utils.get(interaction.guild.text_channels, name=channel_name)
+    if channel:
+        if not description:
+            print(f"{interaction.user} has just joined, but no description was provided.")
+        else:
+            await channel.send(f"{interaction.user.mention} has just joined. \"{description}\"")
+    else:
+        print(f"Channel '{channel_name}' not found.")
 
 async def ask_name(interaction: discord.Interaction):
     future = asyncio.get_event_loop().create_future()
@@ -75,13 +90,30 @@ async def ask_name(interaction: discord.Interaction):
     return await future
 
 
+async def ask_description(interaction: discord.Interaction):
+    await interaction.followup.send("Please type your description in chat.", ephemeral=True)
+
+    def check(m: discord.Message):
+        return m.author == interaction.user and m.channel == interaction.channel
+
+    msg = await bot.wait_for("message", check=check, timeout=120)
+
+    try:
+        await msg.delete()
+    except discord.Forbidden:
+        pass  # Bot may not have permission to delete the message
+
+    return interaction, msg.content
+
+
+
 async def remove_all_roles(interaction: discord.Interaction):
     for role in interaction.user.roles:
         if role.name != "@everyone":  # Skip the default @everyone role
-            await interaction.user.remove_roles(role)
-    
-
-
+            try:
+                await interaction.user.remove_roles(role)
+            except discord.Forbidden:
+                continue  # Skip roles the bot cannot remove
 
 
 async def ask_location(interaction: discord.Interaction):

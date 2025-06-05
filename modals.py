@@ -16,4 +16,3 @@ class NameModal(discord.ui.Modal, title="Enter Your Full Name"):
 
         await interaction.response.defer(ephemeral=True)
         await self.on_success(interaction, self.full_name.value)
-
