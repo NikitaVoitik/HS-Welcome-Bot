@@ -56,15 +56,14 @@ async def verify_user(interaction: discord.Interaction):
     print(f"{interaction.user} set their description to: {description}")
 
 
-    await send_description(interaction, description, channel_name="💬global")
 
     # Continue using follow-ups or component interactions
     await ask_location(interaction)
     await ask_occupations(interaction)
     await ask_majors(interaction)
     await ask_levels(interaction)
-
     await assign_pending_verification_role(interaction)
+    await send_description(interaction, description, channel_name="💬global")
     await interaction.followup.send(
         "✅ All steps are complete! You will be verified once an admin reviews and approves your information.",
         ephemeral=True
@@ -91,7 +90,7 @@ async def ask_name(interaction: discord.Interaction):
 
 
 async def ask_description(interaction: discord.Interaction):
-    await interaction.followup.send("Please type your description in chat.", ephemeral=True)
+    await interaction.followup.send("Type your description in the chat. Please include your skills, achievements, and hobbies. And wait for the next steps", ephemeral=True)
 
     def check(m: discord.Message):
         return m.author == interaction.user and m.channel == interaction.channel
