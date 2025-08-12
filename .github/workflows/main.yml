@@ -24,8 +24,12 @@ jobs:
           cd discord_bot
           
           # Pull latest changes
-          git pull origin main
-          
+          if [ ! -d ".git" ]; then
+            git clone https://github.com/NikitaVoitik/HS-Welcome-Bot .
+          else
+            git pull origin main
+          fi
+  
           # Install/update dependencies
           pip install -r requirements.txt
           
