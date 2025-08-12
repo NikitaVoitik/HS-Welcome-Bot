@@ -17,44 +17,53 @@ jobs:
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SERVER_SSH_KEY }}
           port: ${{ secrets.SERVER_PORT }}
+          timeout: 300s
+          command_timeout: 60s
           script: |
+            set -e  # Exit on any error
+            
+            echo "🔍 Starting deployment process..."
+            
             # Navigate to bot directory
             mkdir -p discord_bot
-            
             cd discord_bot
             
             # Pull latest changes
             if [ ! -d ".git" ]; then
+              echo "📥 Cloning repository..."
               git clone https://github.com/NikitaVoitik/HS-Welcome-Bot .
             else
+              echo "📥 Pulling latest changes..."
               git pull origin master
             fi
             
             # Install/update dependencies
+            echo "📦 Installing dependencies..."
             pip install -r requirements.txt
             
-            # Stop existing bot process more thoroughly
+            # Stop existing bot process with better error handling
             echo "🛑 Stopping previous bot instances..."
             
-            # Kill all python bot.py processes
-            pkill -f "python bot.py" || true
-            pkill -f "python3 bot.py" || true
-            
-            # Wait for processes to terminate
-            sleep 3
-            
-            # Force kill if still running
-            pkill -9 -f "python bot.py" || true
-            pkill -9 -f "python3 bot.py" || true
-            
-            # Additional wait to ensure cleanup
-            sleep 2
-            
-            # Verify no bot processes are running
+            # Check for existing processes first
             if pgrep -f "python.*bot.py" > /dev/null; then
-              echo "⚠️ Warning: Bot processes still detected, attempting force termination..."
-              pkill -9 -f "python.*bot.py" || true
-              sleep 3
+              echo "Found running bot processes:"
+              pgrep -f "python.*bot.py" || true
+            
+              echo "Attempting graceful shutdown..."
+              pkill -TERM -f "python.*bot.py" || true
+            
+              # Wait for graceful shutdown
+              echo "Waiting for processes to terminate..."
+              sleep 5
+            
+              # Check if still running and force kill if needed
+              if pgrep -f "python.*bot.py" > /dev/null; then
+                echo "Processes still running, force killing..."
+                pkill -KILL -f "python.*bot.py" || true
+                sleep 2
+              fi
+            else
+              echo "No existing bot processes found"
             fi
             
             echo "✅ Previous bot instances stopped"
@@ -63,20 +72,17 @@ jobs:
             echo "🚀 Starting new bot instance..."
             nohup python bot.py > bot.log 2>&1 &
             
-            # Wait a moment for the bot to start
+            # Wait and verify startup
             sleep 5
             
-            # Check if the bot process is running
             if pgrep -f "python bot.py" > /dev/null; then
               echo "✅ Bot deployed and started successfully!"
               echo "Process ID: $(pgrep -f 'python bot.py')"
+              echo "Recent bot log:"
+              tail -10 bot.log 2>/dev/null || echo "No log entries yet"
             else
               echo "❌ Bot failed to start!"
               echo "Checking for errors in log:"
-              tail -20 bot.log || echo "No log file available"
+              tail -20 bot.log 2>/dev/null || echo "No log file available"
               exit 1
             fi
-            
-            # Show recent log entries
-            echo "Recent bot log:"
-            tail -10 bot.log || echo "No log file yet"
