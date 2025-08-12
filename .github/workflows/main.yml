@@ -10,33 +10,47 @@ jobs:
     runs-on: ubuntu-latest
     
     steps:
-    - name: Deploy to server via SSH
-      uses: appleboy/ssh-action@v1.0.3
-      with:
-        host: ${{ secrets.SERVER_HOST }}
-        username: ${{ secrets.SERVER_USER }}
-        key: ${{ secrets.SERVER_SSH_KEY }}
-        port: ${{ secrets.SERVER_PORT }}
-        script: |
-          # Navigate to bot directory
-          mkdir -p discord_bot
-          
-          cd discord_bot
-          
-          # Pull latest changes
-          if [ ! -d ".git" ]; then
-            git clone https://github.com/NikitaVoitik/HS-Welcome-Bot .
-          else
-            git pull origin main
-          fi
-  
-          # Install/update dependencies
-          pip install -r requirements.txt
-          
-          # Stop existing bot process
-          pkill -f "python bot.py" || true
-          
-          # Start bot in background
-          nohup python bot.py > bot.log 2>&1 &
-          
-          echo "Bot deployed successfully!"
+      - name: Deploy to server via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SERVER_SSH_KEY }}
+          port: ${{ secrets.SERVER_PORT }}
+          script: |
+            # Navigate to bot directory
+            mkdir -p discord_bot
+            
+            cd discord_bot
+            
+            # Pull latest changes
+            if [ ! -d ".git" ]; then
+              git clone https://github.com/NikitaVoitik/HS-Welcome-Bot .
+            else
+              git pull origin main
+            fi
+            
+            # Install/update dependencies
+            pip install -r requirements.txt
+            
+            # Stop existing bot process
+            pkill -f "python bot.py" || true
+            
+            # Start bot in background
+            nohup python bot.py > bot.log 2>&1 &
+            
+            # Wait a moment for the bot to start
+            sleep 5
+            
+            # Check if the bot process is running
+            if pgrep -f "python bot.py" > /dev/null; then
+              echo "✅ Bot deployed and started successfully!"
+              echo "Process ID: $(pgrep -f 'python bot.py')"
+            else
+              echo "❌ Bot failed to start!"
+              exit 1
+            fi
+            
+            # Show recent log entries
+            echo "Recent bot log:"
+            tail -10 bot.log || echo "No log file yet"
