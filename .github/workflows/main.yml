@@ -27,16 +27,40 @@ jobs:
             if [ ! -d ".git" ]; then
               git clone https://github.com/NikitaVoitik/HS-Welcome-Bot .
             else
-              git pull origin main
+              git pull origin master
             fi
             
             # Install/update dependencies
             pip install -r requirements.txt
             
-            # Stop existing bot process
+            # Stop existing bot process more thoroughly
+            echo "🛑 Stopping previous bot instances..."
+            
+            # Kill all python bot.py processes
             pkill -f "python bot.py" || true
+            pkill -f "python3 bot.py" || true
+            
+            # Wait for processes to terminate
+            sleep 3
+            
+            # Force kill if still running
+            pkill -9 -f "python bot.py" || true
+            pkill -9 -f "python3 bot.py" || true
+            
+            # Additional wait to ensure cleanup
+            sleep 2
+            
+            # Verify no bot processes are running
+            if pgrep -f "python.*bot.py" > /dev/null; then
+              echo "⚠️ Warning: Bot processes still detected, attempting force termination..."
+              pkill -9 -f "python.*bot.py" || true
+              sleep 3
+            fi
+            
+            echo "✅ Previous bot instances stopped"
             
             # Start bot in background
+            echo "🚀 Starting new bot instance..."
             nohup python bot.py > bot.log 2>&1 &
             
             # Wait a moment for the bot to start
@@ -48,6 +72,8 @@ jobs:
               echo "Process ID: $(pgrep -f 'python bot.py')"
             else
               echo "❌ Bot failed to start!"
+              echo "Checking for errors in log:"
+              tail -20 bot.log || echo "No log file available"
               exit 1
             fi
             
