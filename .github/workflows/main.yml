@@ -19,7 +19,9 @@ jobs:
         port: ${{ secrets.SERVER_PORT }}
         script: |
           # Navigate to bot directory
-          cd /path/to/your/bot
+          mkdir -p discord_bot
+          
+          cd discord_bot
           
           # Pull latest changes
           git pull origin main
