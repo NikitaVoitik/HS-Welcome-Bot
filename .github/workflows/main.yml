@@ -18,67 +18,43 @@ jobs:
           key: ${{ secrets.SERVER_SSH_KEY }}
           port: ${{ secrets.SERVER_PORT }}
           timeout: 600s
-          command_timeout: 120s
           script: |
-            # Navigate to bot directory
-            mkdir -p discord_bot && cd discord_bot
+            cd discord_bot || { mkdir -p discord_bot && cd discord_bot; }
             
-            # Pull latest changes
-            if [ ! -d ".git" ]; then
-              echo "📥 Cloning repository..."
-              git clone https://github.com/NikitaVoitik/HS-Welcome-Bot .
-            else
-              echo "📥 Pulling latest changes..."
-              git pull origin master
-            fi
+            # Update code
+            [ ! -d ".git" ] && git clone https://github.com/NikitaVoitik/HS-Welcome-Bot . || git pull origin master
             
             # Install dependencies
-            echo "📦 Installing dependencies..."
             pip install -r requirements.txt
             
-            # Alternative approach: create a stop script and use it
-            echo "🛑 Stopping previous bot instances..."
+            # Simple process management using PID file approach
+            echo "🛑 Managing bot process..."
             
-            # Create a simple stop script
-            cat > stop_bot.sh << 'EOF'
-            #!/bin/bash
-            # Find and kill bot processes by PID
-            for pid in $(pgrep -f "python.*bot.py"); do
-              echo "Stopping process $pid"
-              kill $pid 2>/dev/null || true
-              sleep 1
-              # Check if still running and force kill
-              if kill -0 $pid 2>/dev/null; then
-                echo "Force killing process $pid"
-                kill -9 $pid 2>/dev/null || true
+            # Check if PID file exists and process is running
+            if [ -f bot.pid ]; then
+              old_pid=$(cat bot.pid)
+              if kill -0 "$old_pid" 2>/dev/null; then
+                echo "Stopping old bot process $old_pid"
+                kill "$old_pid"
+                sleep 3
+                # Force kill if needed
+                kill -0 "$old_pid" 2>/dev/null && kill -9 "$old_pid" 2>/dev/null || true
               fi
-            done
-            EOF
+              rm -f bot.pid
+            fi
             
-            chmod +x stop_bot.sh
-            ./stop_bot.sh
+            # Start new bot and save PID
+            echo "🚀 Starting bot..."
+            python bot.py > bot.log 2>&1 &
+            echo $! > bot.pid
             
-            # Wait a moment to ensure cleanup
             sleep 3
             
-            # Verify no processes are running
-            remaining=$(pgrep -f "python.*bot.py" | wc -l)
-            echo "Remaining bot processes: $remaining"
-            
-            echo "✅ Previous bot instances stopped"
-            
-            # Start bot in background
-            echo "🚀 Starting new bot instance..."
-            nohup python bot.py > bot.log 2>&1 &
-            
-            # Wait and verify
-            sleep 5
-            
-            if pgrep -f "python bot.py" > /dev/null; then
-              echo "✅ Bot deployed and started successfully!"
-              echo "Process ID: $(pgrep -f 'python bot.py')"
+            # Verify it's running
+            if kill -0 $(cat bot.pid) 2>/dev/null; then
+              echo "✅ Bot started successfully with PID $(cat bot.pid)"
             else
-              echo "❌ Bot failed to start!"
+              echo "❌ Bot failed to start"
               tail -10 bot.log 2>/dev/null || echo "No log available"
               exit 1
             fi
