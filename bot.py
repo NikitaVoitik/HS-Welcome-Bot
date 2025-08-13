@@ -77,7 +77,7 @@ async def verify_user(interaction: discord.Interaction):
     await assign_pending_verification_role(interaction)
     await send_description(interaction, description, channel_name="💬global") # Send the concatenated description
     await interaction.followup.send(
-        "✅ All steps are complete! You will be verified once an admin reviews and approves your information.",
+        "✅ Thanks for the info! You already have access to view most of the channels, you'll be able to write there once an admin reviews and approves your information - enjoy and make the most of it! 💜",
         ephemeral=True
     )
 
