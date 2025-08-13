@@ -54,6 +54,7 @@ async def verify_user(interaction: discord.Interaction):
     skills = await ask_multiple_details(interaction, "What are your **skills**?", "skills")
     achievements = await ask_multiple_details(interaction, "What are your notable **achievements**?", "achievements")
     social_media = await ask_multiple_details(interaction, "Please share your **social media profiles** (e.g., LinkedIn, Instargram, GitHub).", "social media")
+    greeting_message = await ask_multiple_details(interaction, "Please share a **greeting message** for the community.", "greeting message")
 
     # Concatenate into a single beautiful description
     description_parts = []
@@ -65,6 +66,8 @@ async def verify_user(interaction: discord.Interaction):
         description_parts.append(f"**Achievements:** {achievements}")
     if social_media:
         description_parts.append(f"**Social Media:** {social_media}")
+    if greeting_message:
+        description_parts.append(f"**Greeting Message:** {greeting_message}")
 
     description = "\n".join(description_parts) if description_parts else "No description provided."
     print(f"{interaction.user}'s concatenated description: {description}")
