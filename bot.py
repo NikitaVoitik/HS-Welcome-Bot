@@ -58,6 +58,8 @@ async def verify_user(interaction: discord.Interaction):
 
     # Concatenate into a single beautiful description
     description_parts = []
+    if greeting_message:
+        description_parts.append(greeting_message)
     if hobbies:
         description_parts.append(f"**Hobbies:** {hobbies}")
     if skills:
@@ -66,8 +68,6 @@ async def verify_user(interaction: discord.Interaction):
         description_parts.append(f"**Achievements:** {achievements}")
     if social_media:
         description_parts.append(f"**Social Media:** {social_media}")
-    if greeting_message:
-        description_parts.append(f"**Greeting Message:** {greeting_message}")
 
     description = "\n".join(description_parts) if description_parts else "No description provided."
     print(f"{interaction.user}'s concatenated description: {description}")
