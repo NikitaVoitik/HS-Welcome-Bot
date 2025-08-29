@@ -54,9 +54,12 @@ async def verify_user(interaction: discord.Interaction):
     skills = await ask_multiple_details(interaction, "What are your **skills**?", "skills")
     achievements = await ask_multiple_details(interaction, "What are your notable **achievements**?", "achievements")
     social_media = await ask_multiple_details(interaction, "Please share your **social media profiles** (e.g., LinkedIn, Instargram, GitHub).", "social media")
+    greeting_message = await ask_multiple_details(interaction, "Please share a **greeting message** for the community.", "greeting message")
 
     # Concatenate into a single beautiful description
     description_parts = []
+    if greeting_message:
+        description_parts.append(greeting_message)
     if hobbies:
         description_parts.append(f"**Hobbies:** {hobbies}")
     if skills:
@@ -77,7 +80,7 @@ async def verify_user(interaction: discord.Interaction):
     await assign_pending_verification_role(interaction)
     await send_description(interaction, description, channel_name="💬global") # Send the concatenated description
     await interaction.followup.send(
-        "✅ All steps are complete! You will be verified once an admin reviews and approves your information.",
+        "✅ Thanks for the info! You already have access to view most of the channels, you'll be able to write there once an admin reviews and approves your information - enjoy and make the most of it! 💜",
         ephemeral=True
     )
 
