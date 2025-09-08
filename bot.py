@@ -24,7 +24,7 @@ async def on_ready():
 
 @bot.event
 async def on_member_join(member: discord.Member):
-    welcome_channel = discord.utils.get(member.guild.text_channels, name="🚀welcome")
+    welcome_channel = discord.utils.get(member.guild.text_channels, name="members")
 
     if welcome_channel:
         try:
@@ -59,7 +59,7 @@ async def verify_user(interaction: discord.Interaction):
     # Concatenate into a single beautiful description
     description_parts = []
     if greeting_message:
-        description_parts.append(greeting_message)
+        description_parts.append(f"\n**{greeting_message}**\n")
     if hobbies:
         description_parts.append(f"**Hobbies:** {hobbies}")
     if skills:
